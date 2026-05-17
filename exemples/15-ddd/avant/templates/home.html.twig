@@ -1,0 +1,232 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Boutique — Exercice DDD{% endblock %}
+
+{% block body %}
+
+<h1 style="font-size:22px; margin-bottom:20px; color:#2c3e50;">Exercice — Domain Driven Design</h1>
+
+<div style="display:flex; gap:12px; margin-bottom:28px; flex-wrap:wrap;">
+    <a href="{{ path('commande_passer') }}" class="btn btn-primary" style="font-size:15px; padding:10px 22px;">
+        Passer une commande
+    </a>
+    <a href="{{ path('commande_liste') }}" class="btn btn-primary" style="font-size:15px; padding:10px 22px; background:#27ae60;">
+        Voir mes commandes
+    </a>
+</div>
+
+{# ── Bandeau exercice ───────────────────────────────────────────── #}
+<div style="background:#fff3cd; border:1px solid #ffc107; border-left:5px solid #ffc107; border-radius:6px; padding:20px 24px; margin-bottom:28px;">
+    <h2 style="margin:0 0 8px; font-size:17px; color:#856404;">Exercice — Refactoriser cette application en Domain Driven Design</h2>
+    <p style="margin:0; color:#664d03; line-height:1.6;">
+        Cette application fonctionne, mais elle est <strong>volontairement mal architecturée</strong>.
+        Toute la logique métier, la persistance et l'orchestration sont mélangées dans un seul contrôleur (<code>CommandeController</code>).
+        <br>Votre mission : la réécrire en respectant les principes du <strong>Domain Driven Design</strong>
+        et de l'<strong>architecture hexagonale</strong>, en séparant les couches <code>Domain</code> / <code>Application</code> / <code>Infrastructure</code>.
+    </p>
+</div>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:28px;">
+
+    {# ── Use cases ───────────────────────────────────────────────── #}
+    <div style="background:#fff; border:1px solid #ddd; border-radius:8px; padding:22px;">
+        <h2 style="font-size:17px; margin:0 0 14px; color:#2c3e50;">Use cases de l'app</h2>
+        <ul style="margin:0; padding-left:18px; line-height:2; color:#555;">
+            <li><strong>Passer une commande</strong> — vérifie le stock, crée la commande et les lignes, déduit le stock</li>
+            <li><strong>Annuler une commande</strong> — seulement si statut <code>EN_ATTENTE</code>, restaure le stock</li>
+            <li><strong>Voir ses commandes</strong> — historique par email client</li>
+            <li><strong>Email de confirmation</strong> — envoyé de façon <em>asynchrone</em> via Symfony Messenger</li>
+        </ul>
+    </div>
+
+    {# ── Ce qui ne va pas ─────────────────────────────────────────── #}
+    <div style="background:#fff; border:1px solid #f5c6cb; border-radius:8px; padding:22px;">
+        <h2 style="font-size:17px; margin:0 0 14px; color:#721c24;">Ce qui ne va pas dans ce code</h2>
+        <ul style="margin:0; padding-left:18px; line-height:2; color:#555;">
+            <li>Logique métier dans le contrôleur (vérif stock, règle d'annulation)</li>
+            <li>Accès direct à l'<code>EntityManager</code> dans le contrôleur</li>
+            <li>Entités sans comportement (simples <em>sacs de données</em>)</li>
+            <li>Pas de Value Object (<code>Email</code>, <code>Money</code>…)</li>
+            <li>Impossible à tester sans base de données</li>
+            <li><code>CommandePasseeMessage</code> transporte un <code>int</code>, pas un Domain Event</li>
+        </ul>
+    </div>
+
+</div>
+
+{# ── DDD ─────────────────────────────────────────────────────────── #}
+<div style="background:#fff; border:1px solid #ddd; border-radius:8px; padding:24px; margin-bottom:20px;">
+    <h2 style="font-size:18px; margin:0 0 18px; color:#2c3e50;">Principes du Domain Driven Design</h2>
+
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+
+        <div style="background:#eaf4fb; border-radius:6px; padding:16px;">
+            <h3 style="font-size:14px; margin:0 0 8px; color:#1a5276;">Ubiquitous Language</h3>
+            <p style="margin:0; font-size:13px; color:#555; line-height:1.6;">
+                Tout le monde (dev + métier) parle le <strong>même vocabulaire</strong>.
+                Les classes s'appellent <code>Commande</code>, <code>LigneCommande</code>,
+                pas <code>Order</code> ou <code>CartItem</code>.
+            </p>
+        </div>
+
+        <div style="background:#eafaf1; border-radius:6px; padding:16px;">
+            <h3 style="font-size:14px; margin:0 0 8px; color:#1e8449;">Aggregate &amp; Aggregate Root</h3>
+            <p style="margin:0; font-size:13px; color:#555; line-height:1.6;">
+                Un <strong>Aggregate</strong> est un groupe d'entités cohérent.
+                <code>Commande</code> est l'<em>Aggregate Root</em> : on ne touche aux
+                <code>LigneCommande</code> qu'en passant par elle.
+            </p>
+        </div>
+
+        <div style="background:#fef9e7; border-radius:6px; padding:16px;">
+            <h3 style="font-size:14px; margin:0 0 8px; color:#7d6608;">Value Object</h3>
+            <p style="margin:0; font-size:13px; color:#555; line-height:1.6;">
+                Objet <strong>immutable</strong> défini par sa valeur, pas son identité.
+                Ex : <code>Email</code>, <code>Money</code>, <code>Quantity</code>.
+                Il se valide lui-même à la construction.
+            </p>
+        </div>
+
+        <div style="background:#f9ebea; border-radius:6px; padding:16px;">
+            <h3 style="font-size:14px; margin:0 0 8px; color:#7b241c;">Repository</h3>
+            <p style="margin:0; font-size:13px; color:#555; line-height:1.6;">
+                Le domaine déclare une <strong>interface</strong> (<code>CommandeRepositoryInterface</code>),
+                l'infrastructure fournit l'implémentation Doctrine.
+                Le domaine ne connaît pas Doctrine.
+            </p>
+        </div>
+
+        <div style="background:#f4ecf7; border-radius:6px; padding:16px;">
+            <h3 style="font-size:14px; margin:0 0 8px; color:#6c3483;">Domain Event</h3>
+            <p style="margin:0; font-size:13px; color:#555; line-height:1.6;">
+                Quand quelque chose d'important arrive dans le domaine,
+                l'Aggregate émet un événement (<code>CommandePassee</code>).
+                Les autres parties du système y réagissent sans couplage.
+            </p>
+        </div>
+
+        <div style="background:#eaf4fb; border-radius:6px; padding:16px;">
+            <h3 style="font-size:14px; margin:0 0 8px; color:#1a5276;">Bounded Context</h3>
+            <p style="margin:0; font-size:13px; color:#555; line-height:1.6;">
+                Le domaine est découpé en <strong>contextes délimités</strong> avec leurs
+                propres modèles. Ex : <em>Catalogue</em>, <em>Commandes</em>, <em>Livraison</em>
+                sont des contextes distincts.
+            </p>
+        </div>
+
+    </div>
+</div>
+
+{# ── Archi hexa ──────────────────────────────────────────────────── #}
+<div style="background:#fff; border:1px solid #ddd; border-radius:8px; padding:24px; margin-bottom:20px;">
+    <h2 style="font-size:18px; margin:0 0 18px; color:#2c3e50;">Architecture hexagonale (Ports &amp; Adapters)</h2>
+
+    <p style="color:#555; margin:0 0 16px; line-height:1.6;">
+        L'architecture hexagonale place le <strong>domaine au centre</strong>.
+        Tout ce qui est externe (BDD, HTTP, email, queue…) est un <em>adaptateur</em>
+        qui se branche sur un <em>port</em> (interface) défini par le domaine.
+    </p>
+
+    <div style="background:#f8f9fa; border-radius:8px; padding:20px; font-family:monospace; font-size:13px; line-height:2; color:#333; overflow-x:auto;">
+<pre style="margin:0;">
+┌─────────────────────────────────────────────────────┐
+│                   Infrastructure                     │
+│                                                      │
+│  [HTTP Controller]      [Doctrine Repository]        │
+│  [CLI Command]          [Mailer Adapter]             │
+│  [Worker/Consumer]      [External API Client]        │
+│         │                       │                   │
+│         ▼   PORT (interface)    ▼                   │
+│    ┌────────────────────────────────┐               │
+│    │          Application           │               │
+│    │                                │               │
+│    │  PasserCommandeHandler         │               │
+│    │  AnnulerCommandeHandler        │               │
+│    │  MesCommandesHandler           │               │
+│    │         │                      │               │
+│    │         ▼                      │               │
+│    │  ┌─────────────────────┐       │               │
+│    │  │       Domain        │       │               │
+│    │  │                     │       │               │
+│    │  │  Commande (AR)      │       │               │
+│    │  │  Produit            │       │               │
+│    │  │  Email (VO)         │       │               │
+│    │  │  Money (VO)         │       │               │
+│    │  │  CommandePassee (E) │       │               │
+│    │  └─────────────────────┘       │               │
+│    └────────────────────────────────┘               │
+└─────────────────────────────────────────────────────┘
+  AR = Aggregate Root  VO = Value Object  E = Event
+</pre>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:16px;">
+        <div style="border-left:4px solid #2980b9; padding:10px 14px; background:#f8f9fa; border-radius:0 6px 6px 0;">
+            <strong style="font-size:13px; color:#2980b9;">Domain</strong>
+            <p style="margin:4px 0 0; font-size:12px; color:#555;">Entités, Value Objects, Domain Events, interfaces Repository. <strong>Aucune dépendance externe.</strong></p>
+        </div>
+        <div style="border-left:4px solid #27ae60; padding:10px 14px; background:#f8f9fa; border-radius:0 6px 6px 0;">
+            <strong style="font-size:13px; color:#27ae60;">Application</strong>
+            <p style="margin:4px 0 0; font-size:12px; color:#555;">Use case handlers (Command/Query). Orchestre le domaine, ne connaît que les interfaces.</p>
+        </div>
+        <div style="border-left:4px solid #e67e22; padding:10px 14px; background:#f8f9fa; border-radius:0 6px 6px 0;">
+            <strong style="font-size:13px; color:#e67e22;">Infrastructure</strong>
+            <p style="margin:4px 0 0; font-size:12px; color:#555;">Implémentations concrètes : Doctrine, Symfony Mailer, Controllers HTTP, Workers.</p>
+        </div>
+    </div>
+</div>
+
+{# ── Structure cible ─────────────────────────────────────────────── #}
+<div style="background:#fff; border:1px solid #ddd; border-radius:8px; padding:24px;">
+    <h2 style="font-size:18px; margin:0 0 14px; color:#2c3e50;">Structure cible du projet refactorisé</h2>
+    <div style="background:#1e1e1e; color:#d4d4d4; border-radius:6px; padding:20px; font-family:monospace; font-size:13px; line-height:1.8; overflow-x:auto;">
+<pre style="margin:0;"><span style="color:#9cdcfe;">src/</span>
+├── <span style="color:#9cdcfe;">Domain/</span>                            <span style="color:#6a9955;">← cœur métier, 0 dépendance externe</span>
+│   ├── <span style="color:#9cdcfe;">Model/</span>
+│   │   ├── <span style="color:#4ec9b0;">Commande.php</span>              <span style="color:#6a9955;">← Aggregate Root avec comportement</span>
+│   │   ├── <span style="color:#4ec9b0;">LigneCommande.php</span>
+│   │   ├── <span style="color:#4ec9b0;">Produit.php</span>
+│   │   ├── <span style="color:#4ec9b0;">Email.php</span>                 <span style="color:#6a9955;">← Value Object (immutable, auto-validé)</span>
+│   │   └── <span style="color:#4ec9b0;">StatutCommande.php</span>        <span style="color:#6a9955;">← enum PHP</span>
+│   ├── <span style="color:#9cdcfe;">Event/</span>
+│   │   ├── <span style="color:#4ec9b0;">CommandePassee.php</span>        <span style="color:#6a9955;">← Domain Event (riche, pas un simple int)</span>
+│   │   └── <span style="color:#4ec9b0;">CommandeAnnulee.php</span>
+│   ├── <span style="color:#9cdcfe;">Repository/</span>
+│   │   ├── <span style="color:#4ec9b0;">CommandeRepositoryInterface.php</span>   <span style="color:#6a9955;">← interface définie par le Domain</span>
+│   │   └── <span style="color:#4ec9b0;">ProduitRepositoryInterface.php</span>
+│   └── <span style="color:#9cdcfe;">Exception/</span>
+│       ├── <span style="color:#4ec9b0;">StockInsuffisantException.php</span>
+│       └── <span style="color:#4ec9b0;">AnnulationImpossibleException.php</span>
+│
+├── <span style="color:#9cdcfe;">Application/</span>                       <span style="color:#6a9955;">← orchestration : use cases + entrée HTTP</span>
+│   ├── <span style="color:#9cdcfe;">Controller/</span>                    <span style="color:#6a9955;">← mince, délègue aux Handlers</span>
+│   │   └── <span style="color:#4ec9b0;">CommandeController.php</span>
+│   ├── <span style="color:#9cdcfe;">Command/</span>
+│   │   ├── <span style="color:#9cdcfe;">PasserCommande/</span>
+│   │   │   ├── <span style="color:#4ec9b0;">PasserCommandeCommand.php</span>    <span style="color:#6a9955;">← DTO (données de la requête)</span>
+│   │   │   └── <span style="color:#4ec9b0;">PasserCommandeHandler.php</span>   <span style="color:#6a9955;">← logique d'orchestration</span>
+│   │   └── <span style="color:#9cdcfe;">AnnulerCommande/</span>
+│   │       ├── <span style="color:#4ec9b0;">AnnulerCommandeCommand.php</span>
+│   │       └── <span style="color:#4ec9b0;">AnnulerCommandeHandler.php</span>
+│   └── <span style="color:#9cdcfe;">Query/</span>
+│       └── <span style="color:#9cdcfe;">MesCommandes/</span>
+│           ├── <span style="color:#4ec9b0;">MesCommandesQuery.php</span>
+│           └── <span style="color:#4ec9b0;">MesCommandesHandler.php</span>
+│
+└── <span style="color:#9cdcfe;">Infrastructure/</span>                    <span style="color:#6a9955;">← adaptateurs techniques (framework, BDD…)</span>
+    ├── <span style="color:#9cdcfe;">Persistence/</span>                   <span style="color:#6a9955;">← implémentations Doctrine des interfaces Domain</span>
+    │   ├── <span style="color:#4ec9b0;">DoctrineCommandeRepository.php</span>
+    │   └── <span style="color:#4ec9b0;">DoctrineProduitRepository.php</span>
+    └── <span style="color:#9cdcfe;">Messaging/</span>                     <span style="color:#6a9955;">← réaction aux Domain Events (email, notif…)</span>
+        └── <span style="color:#4ec9b0;">SendConfirmationEmailOnCommandePassee.php</span></pre>
+    </div>
+
+    <div style="margin-top:16px; background:#fff3cd; border:1px solid #ffc107; border-left:4px solid #ffc107; border-radius:0 6px 6px 0; padding:14px 18px; font-size:13px; color:#664d03; line-height:1.7;">
+        <strong>Débat : où mettre les Controllers ?</strong><br>
+        En architecture hexagonale stricte (Cockburn), le Controller est un <em>adaptateur primaire</em> (côté "driving") → <strong>Infrastructure</strong>.<br>
+        En pratique DDD, beaucoup placent les Controllers dans <strong>Application</strong> car ils orchestrent les use cases et ne manipulent aucune techno externe directement.<br>
+        Les deux sont valides — l'important est de choisir une convention et de la tenir.
+    </div>
+</div>
+
+{% endblock %}

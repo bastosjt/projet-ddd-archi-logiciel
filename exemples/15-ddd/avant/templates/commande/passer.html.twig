@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Passer une commande{% endblock %}
+
+{% block body %}
+<h1>Passer une commande</h1>
+
+<form method="post" style="background:#fff; padding:24px; border-radius:6px; border:1px solid #ddd;">
+    <div style="margin-bottom:16px;">
+        <label style="display:block; font-weight:bold; margin-bottom:6px;">Votre email</label>
+        <input type="email" name="email" required style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;">
+    </div>
+
+    <div style="margin-bottom:20px;">
+        <label style="display:block; font-weight:bold; margin-bottom:10px;">Produits disponibles</label>
+        <table>
+            <thead>
+                <tr>
+                    <th>Produit</th>
+                    <th>Prix unitaire</th>
+                    <th>Stock</th>
+                    <th>Quantité</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for produit in produits %}
+                <tr>
+                    <td>{{ produit.nom }}</td>
+                    <td>{{ produit.prix|number_format(2, ',', ' ') }} €</td>
+                    <td>{{ produit.stock }}</td>
+                    <td>
+                        <input type="number"
+                               name="items[{{ produit.id }}]"
+                               min="0"
+                               max="{{ produit.stock }}"
+                               value="0"
+                               style="width:70px; padding:4px; border:1px solid #ccc; border-radius:4px;"
+                               {% if produit.stock == 0 %}disabled{% endif %}>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Valider la commande</button>
+</form>
+{% endblock %}

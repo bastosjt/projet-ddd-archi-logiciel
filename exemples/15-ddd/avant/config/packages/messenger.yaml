@@ -1,0 +1,45 @@
+framework:
+    messenger:
+        failure_transport: failed
+
+        transports:
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 3
+                    delay: 2000
+                    multiplier: 2
+
+            failed: 'doctrine://default?queue_name=failed'
+
+        # ──────────────────────────────────────────────────────────────────────
+        # VERSION "SALE" (avant/)
+        # On route un message applicatif (App\Message\) vers le transport async.
+        # Ce message transporte un simple int (l'id de la commande) et un email
+        # brut — ce n'est pas un Domain Event, juste un DTO de déclenchement.
+        # ──────────────────────────────────────────────────────────────────────
+        routing:
+            App\Message\CommandePasseeMessage: async
+
+        # ──────────────────────────────────────────────────────────────────────
+        # VERSION DDD (apres/) — remplacer le bloc "routing" ci-dessus par :
+        #
+        # Les Domain Events sont émis par l'Aggregate Root dans le Domain.
+        # L'Infrastructure réagit à ces événements via des handlers dédiés.
+        # Le routing pointe vers les classes d'événements du Domain.
+        #
+        # routing:
+        #     App\Domain\Event\CommandePassee:  async
+        #     App\Domain\Event\CommandeAnnulee: async
+        #
+        # Le handler SendConfirmationEmailOnCommandePassee (Infrastructure/Messaging/)
+        # est taggé #[AsMessageHandler] et reçoit CommandePassee.
+        # Il n'a plus besoin de retourner en BDD chercher la commande car
+        # le Domain Event lui transmet déjà toutes les données nécessaires.
+        # ──────────────────────────────────────────────────────────────────────
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                async: 'in-memory://'

@@ -12,6 +12,8 @@ class UserManager {
     this.db = { host: 'localhost', database: 'test' };
   }
 
+  // 1 les users, 1 les rapports, 1 exporter, 1 reduction, 1 notification
+
   addUser(name, email, phone) {
     if (!name || !email) {
       throw new Error('Nom et email requis');
@@ -71,6 +73,8 @@ class UserManager {
     }
   }
 }
+
+
 
 const manager = new UserManager();
 manager.addUser('Alice', 'alice@example.com', '+33612345678');

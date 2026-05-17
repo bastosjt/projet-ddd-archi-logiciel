@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mes commandes{% endblock %}
+
+{% block body %}
+<h1>Mes commandes</h1>
+
+<form method="get" style="display:flex; gap:10px; margin-bottom:24px;">
+    <input type="email"
+           name="email"
+           value="{{ email }}"
+           placeholder="Entrez votre email"
+           required
+           style="flex:1; padding:8px; border:1px solid #ccc; border-radius:4px;">
+    <button type="submit" class="btn btn-primary">Rechercher</button>
+</form>
+
+{% if email and commandes is empty %}
+    <p style="color:#777;">Aucune commande trouvée pour <strong>{{ email }}</strong>.</p>
+{% endif %}
+
+{% for commande in commandes %}
+<div style="background:#fff; border:1px solid #ddd; border-radius:6px; padding:20px; margin-bottom:16px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div>
+            <strong>Commande #{{ commande.id }}</strong>
+            &nbsp;
+            <span class="badge badge-{{ commande.statut|lower }}">{{ commande.statut }}</span>
+        </div>
+        <div style="color:#777; font-size:13px;">
+            {{ commande.createdAt|date('d/m/Y H:i') }}
+        </div>
+    </div>
+
+    <table style="margin-bottom:12px;">
+        <thead>
+            <tr>
+                <th>Produit</th>
+                <th>Qté</th>
+                <th>Prix unitaire</th>
+                <th>Sous-total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ligne in commande.lignes %}
+            <tr>
+                <td>{{ ligne.produit.nom }}</td>
+                <td>{{ ligne.quantite }}</td>
+                <td>{{ ligne.prixUnitaire|number_format(2, ',', ' ') }} €</td>
+                <td>{{ (ligne.prixUnitaire * ligne.quantite)|number_format(2, ',', ' ') }} €</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" style="text-align:right; font-weight:bold;">Total</td>
+                <td style="font-weight:bold;">{{ commande.total|number_format(2, ',', ' ') }} €</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    {% if commande.statut == 'EN_ATTENTE' %}
+    <form method="post" action="{{ path('commande_annuler', {id: commande.id}) }}"
+          onsubmit="return confirm('Annuler cette commande ?')">
+        <button type="submit" class="btn btn-danger" style="font-size:13px;">Annuler la commande</button>
+    </form>
+    {% endif %}
+</div>
+{% endfor %}
+{% endblock %}
