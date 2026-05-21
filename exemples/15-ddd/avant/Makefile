@@ -58,7 +58,7 @@ setup: build start
 	@echo "En attente que MySQL soit prêt..."
 	@sleep 10
 	$(MAKE) install
-	$(MAKE) db-init
+	$(MAKE) db-reset
 	@echo ""
 	@echo "  Projet prêt ! Ouvrez http://localhost:8089"
 	@echo ""

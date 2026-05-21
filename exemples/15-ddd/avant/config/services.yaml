@@ -10,12 +10,12 @@ services:
     # Toutes les classes sous src/ sont chargées d'un coup, sans distinction
     # de couche. Symfony découvre les services automatiquement.
     # ──────────────────────────────────────────────────────────────────────────
-    App\:
-        resource: '../src/'
-        exclude:
-            - '../src/DependencyInjection/'
-            - '../src/Entity/'
-            - '../src/Kernel.php'
+#    App\:
+#        resource: '../src/'
+#        exclude:
+#            - '../src/DependencyInjection/'
+#            - '../src/Entity/'
+#            - '../src/Kernel.php'
 
     # ──────────────────────────────────────────────────────────────────────────
     # VERSION DDD (apres/) — remplacer le bloc App\ ci-dessus par ceci :
@@ -23,23 +23,22 @@ services:
     # On charge les trois couches séparément pour rendre les frontières
     # explicites. Le Domain ne doit déclarer AUCUN service Symfony :
     # ses classes sont de simples objets PHP (pas de dépendances framework).
-    #
-    # App\Domain\:                          ← PAS de service Symfony ici
-    #     resource: '../src/Domain/'        ← classes instanciées manuellement
-    #                                          ou via les Repositories
-    #
-    # App\Application\:
-    #     resource: '../src/Application/'
-    #     # Les Handlers (Command/Query) sont des services autowirés.
-    #     # Ils reçoivent les interfaces du Domain (Repository, etc.)
-    #     # dont les implémentations concrètes viennent d'Infrastructure.
-    #
-    # App\Infrastructure\:
-    #     resource: '../src/Infrastructure/'
-    #     # Contient les implémentations Doctrine, adapters Mailer, etc.
-    #     exclude:
-    #         - '../src/Infrastructure/Doctrine/Migrations/'
-    #
+    
+    App\Domain\:
+        resource: '../src/Domain/'
+
+    App\Application\:
+        resource: '../src/Application/'
+        # Les Handlers (Command/Query) sont des services autowirés.
+        # Ils reçoivent les interfaces du Domain (Repository, etc.)
+        # dont les implémentations concrètes viennent d'Infrastructure.
+
+    App\Infrastructure\:
+        resource: '../src/Infrastructure/'
+        # Contient les implémentations Doctrine, adapters Mailer, etc.
+        #exclude:
+        #    - '../src/Infrastructure/Doctrine/Migrations/'
+
     # ── Binding des interfaces du Domain vers les implémentations Infra ────────
     #
     # App\Domain\Repository\CommandeRepositoryInterface: '@App\Infrastructure\Persistence\DoctrineCommandeRepository'

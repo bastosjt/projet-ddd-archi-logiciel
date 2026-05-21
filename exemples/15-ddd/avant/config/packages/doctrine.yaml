@@ -15,13 +15,13 @@ doctrine:
         # les annotations de mapping directement sur les classes du domaine.
         # Le domaine est donc couplé à Doctrine.
         # ──────────────────────────────────────────────────────────────────────
-        mappings:
-            App:
-                type: attribute
-                is_bundle: false
-                dir: '%kernel.project_dir%/src/Entity'
-                prefix: 'App\Entity'
-                alias: App
+        #mappings:
+#            App:
+#                type: attribute
+#                is_bundle: false
+#                dir: '%kernel.project_dir%/src/Entity'
+#                prefix: 'App\Entity'
+#                alias: App
 
         # ──────────────────────────────────────────────────────────────────────
         # VERSION DDD (apres/) — remplacer le bloc "mappings" ci-dessus par :
@@ -30,14 +30,14 @@ doctrine:
         # Le mapping se fait via XML ou YAML dans Infrastructure/, ce qui
         # découple complètement le Domain du framework de persistance.
         #
-        # mappings:
-        #     Domain:
-        #         type: xml                            ← ou 'attribute' si on
-        #         is_bundle: false                        accepte le couplage léger
-        #         dir: '%kernel.project_dir%/src/Infrastructure/Persistence/Mapping'
-        #         prefix: 'App\Domain\Model'
-        #         alias: Domain
-        #
+        mappings:
+            Domain:
+                type: xml                            # ou 'attribute' si on
+                is_bundle: false                     # accepte le couplage léger
+                dir: '%kernel.project_dir%/src/Infrastructure/Persistence/Mapping'
+                prefix: 'App\Domain\Model'           # ou 'App\Domain\Model'
+                alias: Domain
+
         # Avec ce choix, les classes Domain\Model\Commande etc. n'ont aucun
         # import Doctrine — elles restent de purs objets PHP testables.
         # Les fichiers XML de mapping décrivent la correspondance objet/table.
